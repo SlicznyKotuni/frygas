@@ -1,0 +1,15 @@
+#:kivy 2.0.0
+
+<Kotun>:
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0  # Przezroczyste tło
+	 Rectangle:
+            pos: self.pos
+            size: self.size
+    size_hint: None, None
+    size: 100, 100
+    Image:
+        source: root.source
+        allow_stretch: True
+        keep_ratio: False
