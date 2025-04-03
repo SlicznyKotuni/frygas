@@ -1,139 +1,147 @@
-import kivy
-kivy.require('2.0.0')  # Upewnij się, że masz Kivy w wersji 2.0.0 lub nowszej
-
+import os
+import random
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import ListProperty, StringProperty, BooleanProperty, ObjectProperty
-from kivy.clock import Clock
-from kivy.animation import Animation
 from kivy.core.window import Window
+from kivy.clock import Clock
 from kivy.vector import Vector
-import random
+from kivy.config import Config
+from kivy.graphics import Rectangle, Color
 
-import win32gui
-import win32con
+# Ustawienia przezroczystości okna (tylko działają na niektórych systemach)
+Config.set('graphics', 'transparent', '1')
+Config.write()
 
 def set_window_transparent():
-    hwnd = win32gui.GetHwnd(Window.hwnd)
-    # Ustawienie stylu okna na przezroczyste
-    wl = win32con.WS_EX_LAYERED
-    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, wl)
-    # Ustawienie koloru przezroczystości (tutaj czarny)
-    win32gui.SetLayeredWindowAttributes(hwnd, 0x000000, 255, win32con.LWA_COLORKEY)
+    """Ustawia okno jako przezroczyste (działa tylko na niektórych systemach)."""
+    Window.clearcolor = (0, 0, 0, 0)  # Ustawienie przezroczystości
+    Window.background_color = (0, 0, 0, 0)  # Ustawienie koloru tła na przezroczysty
 
 class Kotun(Widget):
-    # Właściwości kotunia
-    idle_frames = ListProperty([])
-    run_frames = ListProperty([])
-    jump_frames = ListProperty([])
-    catch_frames = ListProperty([])
-    current_frame = ObjectProperty(None) # Obecna klatka animacji
-    anim_delay = 0.1  # Opóźnienie między klatkami
-    source = StringProperty('') # Ścieżka do obrazka
-    is_catched = BooleanProperty(False)
-    speed = 100 # Bazowa prędkość ruchu
-    follow_distance = 200 # Promień śledzenia myszki
-    # Metody kotunia
-    def __init__(self, **kwargs):
+    anim_delay = 0.1
+
+    def __init__(self, kotun_dir, **kwargs):  # Dodajemy argument kotun_dir
         super(Kotun, self).__init__(**kwargs)
+        self.kotun_dir = kotun_dir  # Zapamiętujemy ścieżkę do katalogu kotunia
         # Załaduj animacje
         self.load_animations()
         # Ustaw animację idle na start
         self.set_animation('idle')
         # Uruchom animację
         Clock.schedule_interval(self.animate, self.anim_delay)
-        Clock.schedule_interval(self.update, 1/60) # Aktualizacja 60 razy na sekundę
-        self.velocity = Vector(0, 0) # Początkowa prędkość
+        Clock.schedule_interval(self.update, 1 / 60)  # Aktualizacja 60 razy na sekundę
+        self.velocity = Vector(0, 0)  # Początkowa prędkość
+        self.speed = 5  # Prędkość poruszania się kotuna
+        self.frame_index = 0  # Indeks aktualnej klatki animacji
 
     def load_animations(self):
         # Załaduj obrazki z folderów (tutaj trzeba podać poprawne ścieżki)
-        self.idle_frames = [f"assets/idle/frame_{i}.png" for i in range(1, 5)] # Przykładowe 4 klatki
-        self.run_frames = [f"assets/run/frame_{i}.png" for i in range(1, 5)]  # Przykładowe 4 klatki
-        self.jump_frames = [f"assets/jump/frame_{i}.png" for i in range(1, 5)] # Przykładowe 4 klatki
-        self.catch_frames = [f"assets/catch/frame_{i}.png" for i in range(1, 5)]# Przykładowe 4 klatki
+        self.idle_frames = self.load_animation_frames(os.path.join(self.kotun_dir, "idle"))
+        self.run_frames = self.load_animation_frames(os.path.join(self.kotun_dir, "run"))
+        self.jump_frames = self.load_animation_frames(os.path.join(self.kotun_dir, "jump"))
+        self.catch_frames = self.load_animation_frames(os.path.join(self.kotun_dir, "catch"))
 
-    def set_animation(self, animation_name):
-        if animation_name == 'idle':
+        if not self.idle_frames:
+            print(f"Warning: No idle frames found in {os.path.join(self.kotun_dir, 'idle')}")
+        if not self.run_frames:
+            print(f"Warning: No run frames found in {os.path.join(self.kotun_dir, 'run')}")
+        if not self.jump_frames:
+            print(f"Warning: No jump frames found in {os.path.join(self.kotun_dir, 'jump')}")
+        if not self.catch_frames:
+            print(f"Warning: No catch frames found in {os.path.join(self.kotun_dir, 'catch')}")
+
+    def load_animation_frames(self, animation_dir):
+        """Ładuje klatki animacji z podanego katalogu."""
+        frames = []
+        try:
+            for filename in sorted(os.listdir(animation_dir)):
+                if filename.endswith(".png"):
+                    frames.append(os.path.join(animation_dir, filename))
+        except FileNotFoundError:
+            print(f"Warning: Directory not found: {animation_dir}")
+        return frames
+
+    def set_animation(self, anim_type):
+        """Ustawia animację."""
+        if anim_type == 'idle':
             self.animation_frames = self.idle_frames
-        elif animation_name == 'run':
+        elif anim_type == 'run':
             self.animation_frames = self.run_frames
-        elif animation_name == 'jump':
+        elif anim_type == 'jump':
             self.animation_frames = self.jump_frames
-        elif animation_name == 'catch':
+        elif anim_type == 'catch':
             self.animation_frames = self.catch_frames
-        self.current_frame_index = 0
-        if self.animation_frames: # Upewnij się, że animacja ma klatki
-            self.source = self.animation_frames[self.current_frame_index] # Ustaw pierwszy obrazek
         else:
-            self.source = "assets/icon.png" # Domyślny obrazek, jeśli brak animacji
+            self.animation_frames = self.idle_frames  # Domyślnie idle
+        self.frame_index = 0  # Resetujemy indeks klatki
 
     def animate(self, dt):
-        # Animacja kotunia
+        """Animuje kotuna."""
         if not self.animation_frames:
-            return # Nic do animowania
-        self.current_frame_index = (self.current_frame_index + 1) % len(self.animation_frames)
-        self.source = self.animation_frames[self.current_frame_index]
+            return  # Nic do animowania
 
-    def on_touch_down(self, touch):
-        # Reakcja na dotyk
-        if self.collide_point(*touch.pos):
-            self.is_catched = True
-            touch.grab(self)
-            self.set_animation('catch')
-            return True # Przejmujemy dotyk
+        self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
+        self.texture = self.load_texture(self.animation_frames[self.frame_index])
 
-    def on_touch_move(self, touch):
-        # Przenoszenie kotunia
-        if touch.grab_current is self:
-            self.center = touch.pos # Przesuwaj kotunia za dotykiem
-
-    def on_touch_up(self, touch):
-        # Puszczenie kotunia
-        if touch.grab_current is self:
-            self.is_catched = False
-            touch.ungrab(self)
-            self.set_animation('idle') # Powrót do animacji idle
+    def load_texture(self, filename):
+        """Ładuje teksturę z pliku."""
+        try:
+            from kivy.core.image import Image
+            return Image(filename).texture
+        except Exception as e:
+            print(f"Error loading texture {filename}: {e}")
+            return None
 
     def on_mouse_pos(self, *args):
-        # Śledzenie pozycji myszki
-        if not self.get_root_window():
-            return
-        pos = args[1]
-        cat_pos = Vector(*self.pos) + Vector(self.size[0] / 2, self.size[1] / 2) # Środek kotka
-        mouse_vector = Vector(*pos) - cat_pos
-
-        if mouse_vector.length() < self.follow_distance and not self.is_catched:
-            # Ucieczka przed myszką
-            self.velocity = -mouse_vector.normalize() * self.speed
-            self.set_animation('run')
-        else:
-            # Losowe poruszanie się
-            if random.random() < 0.01: # 1% szansy na ruch
-                angle = random.uniform(0, 360)
-                self.velocity = Vector(1, 0).rotate(angle) * self.speed
-            elif self.velocity.length() > 0 :
-                self.velocity *= 0.95 # Zwalnianie
-                if self.velocity.length() < 5:
-                  self.velocity = Vector(0,0)
-                  self.set_animation('idle')
+        """Aktualizuje prędkość kotuna w zależności od położenia myszki."""
+        mouse_x, mouse_y = args[1]
+        self.velocity = Vector(mouse_x - self.center_x, mouse_y - self.center_y).normalize() * self.speed
 
     def update(self, dt):
-        # Aktualizacja pozycji
-        if self.velocity.length() > 0 and not self.is_catched:
-            self.pos = Vector(*self.pos) + self.velocity * dt # Przesuń kotka
+        """Aktualizuje pozycję kotuna."""
+        self.pos = Vector(*self.pos) + self.velocity
+        # Ograniczenie do okna
+        self.x = max(0, min(self.x, Window.width - self.width))
+        self.y = max(0, min(self.y, Window.height - self.height))
 
-            # Ograniczenie do granic ekranu
-            self.x = max(0, min(self.x, Window.width - self.width))
-            self.y = max(0, min(self.y, Window.height - self.height))
+    def on_touch_down(self, touch):
+        # Zmiana animacji na "catch" po dotknięciu
+        self.set_animation('catch')
+
+    def on_touch_up(self, touch):
+        # Powrót do animacji "idle" po zakończeniu dotyku
+        self.set_animation('idle')
+
 
 class KotunApp(App):
     def build(self):
-        # Stwórz kotunia i dodaj go do okna
-        kotun = Kotun(size_hint=(None, None), size=(100, 100), pos=(100, 100)) # Rozmiar i pozycja początkowa
-        Window.bind(mouse_pos=kotun.on_mouse_pos) # Śledzenie myszki
-        Window.clearcolor = (0,0,0,0) # Ustawienie przezroczystości koloru okna
-        set_window_transparent() # Ustawienie przezroczystości okna
-        return kotun
+        # Znajdź wszystkie katalogi Frygasiów
+        assets_dir = "assets"
+        if not os.path.exists(assets_dir):
+            print("Creating assets directory...")
+            os.makedirs(assets_dir)
+
+        kotun_dirs = [os.path.join(assets_dir, d) for d in os.listdir(assets_dir) if os.path.isdir(os.path.join(assets_dir, d))]
+        kotuny = []
+        for kotun_dir in kotun_dirs:
+            kotun = Kotun(kotun_dir=kotun_dir, size_hint=(None, None), size=(100, 100),
+                          pos=(random.randint(0, Window.width - 100), random.randint(0, Window.height - 100)))  # Losowa pozycja początkowa
+            Window.bind(mouse_pos=kotun.on_mouse_pos)  # Śledzenie myszki
+            kotuny.append(kotun)
+
+        # Ustaw przezroczystość okna
+        Window.clearcolor = (0, 0, 0, 0)
+        set_window_transparent()
+
+        # Dodaj wszystkie kotuny do okna
+        root = Widget()  # Stwórz główny widget
+        for kotun in kotuny:
+            root.add_widget(kotun)  # Dodaj kotuna do głównego widgetu
+
+        return root
+
 
 if __name__ == '__main__':
+    print("Starting KotunApp...")
     KotunApp().run()
+    print("KotunApp finished.")
