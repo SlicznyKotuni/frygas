@@ -10,6 +10,17 @@ from kivy.core.window import Window
 from kivy.vector import Vector
 import random
 
+import win32gui
+import win32con
+
+def set_window_transparent():
+    hwnd = win32gui.GetHwnd(Window.hwnd)
+    # Ustawienie stylu okna na przezroczyste
+    wl = win32con.WS_EX_LAYERED
+    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, wl)
+    # Ustawienie koloru przezroczystości (tutaj czarny)
+    win32gui.SetLayeredWindowAttributes(hwnd, 0x000000, 255, win32con.LWA_COLORKEY)
+
 class Kotun(Widget):
     # Właściwości kotunia
     idle_frames = ListProperty([])
@@ -120,6 +131,8 @@ class KotunApp(App):
         # Stwórz kotunia i dodaj go do okna
         kotun = Kotun(size_hint=(None, None), size=(100, 100), pos=(100, 100)) # Rozmiar i pozycja początkowa
         Window.bind(mouse_pos=kotun.on_mouse_pos) # Śledzenie myszki
+        Window.clearcolor = (0,0,0,0) # Ustawienie przezroczystości koloru okna
+        set_window_transparent() # Ustawienie przezroczystości okna
         return kotun
 
 if __name__ == '__main__':
