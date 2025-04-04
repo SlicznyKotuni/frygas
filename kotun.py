@@ -9,13 +9,14 @@ from kivy.clock import Clock
 from kivy.vector import Vector
 from kivy.config import Config
 from kivy.graphics import Rectangle, Color
+from kivy.core.image import Image  # Dodajemy import Image
 
 # Ustawienia przezroczystości okna (tylko działają na niektórych systemach)
 Config.set('graphics', 'transparent', '1')
 Config.write()
 
 def set_window_transparent():
-    hwnd = win32gui.FindWindow(None, "Frygający Kotuń") # Znajdź okno po tytule
+    hwnd = win32gui.FindWindow(None, "Frygający Kotuń")  # Znajdź okno po tytule
     if hwnd:
         # Ustawienie stylu okna na przezroczyste
         wl = win32con.WS_EX_LAYERED
@@ -30,11 +31,21 @@ class Kotun(Widget):
 
     def __init__(self, kotun_dir, **kwargs):  # Dodajemy argument kotun_dir
         super(Kotun, self).__init__(**kwargs)
+        print("Tworzę kotunia!")  # Dodajemy print, żeby sprawdzić, czy kotuń się tworzy
         self.kotun_dir = kotun_dir  # Zapamiętujemy ścieżkę do katalogu kotunia
+        self.size_hint = (None, None) # Ustawiamy size_hint
+        self.size = (100, 100) # Ustawiamy rozmiar
         # Załaduj animacje
         self.load_animations()
         # Ustaw animację idle na start
         self.set_animation('idle')
+
+        # Ustaw teksturę na pierwszą klatkę animacji idle
+        if self.animation_frames:
+            self.texture = self.load_texture(self.animation_frames[0])
+        else:
+            print("Brak klatek animacji!")
+
         # Uruchom animację
         Clock.schedule_interval(self.animate, self.anim_delay)
         Clock.schedule_interval(self.update, 1 / 60)  # Aktualizacja 60 razy na sekundę
@@ -61,11 +72,17 @@ class Kotun(Widget):
     def load_animation_frames(self, animation_dir):
         """Ładuje klatki animacji z podanego katalogu."""
         frames = []
-        try:
-            for filename in sorted(os.listdir(animation_dir)):
-                if filename.endswith(".png"):
-                    frames.append(os.path.join(animation_dir, filename))
-        except FileNotFoundError:
+        if os.path.exists(animation_dir):  # Sprawdzamy, czy katalog istnieje
+            try:
+                for i in range(1, 100):  # Zakładamy, że mamy maksymalnie 99 klatek
+                    filename = os.path.join(animation_dir, f"{i}.png")
+                    if os.path.exists(filename):
+                        frames.append(filename)
+                    else:
+                        break  # Przerywamy, jeśli nie znaleziono kolejnej klatki
+            except FileNotFoundError:
+                print(f"Warning: Directory not found: {animation_dir}")
+        else:
             print(f"Warning: Directory not found: {animation_dir}")
         return frames
 
@@ -94,8 +111,8 @@ class Kotun(Widget):
     def load_texture(self, filename):
         """Ładuje teksturę z pliku."""
         try:
-            from kivy.core.image import Image
-            return Image(filename).texture
+            im = Image(filename) # Używamy Image z kivy.core.image
+            return im.texture
         except Exception as e:
             print(f"Error loading texture {filename}: {e}")
             return None
@@ -120,10 +137,9 @@ class Kotun(Widget):
         # Powrót do animacji "idle" po zakończeniu dotyku
         self.set_animation('idle')
 
-
 class KotunApp(App):
     def build(self):
-        Window.title = "Frygający Kotuń" 
+        Window.title = "Frygający Kotuń"
         # Znajdź wszystkie katalogi Frygasiów
         assets_dir = "assets"
         if not os.path.exists(assets_dir):
@@ -133,7 +149,7 @@ class KotunApp(App):
         kotun_dirs = [os.path.join(assets_dir, d) for d in os.listdir(assets_dir) if os.path.isdir(os.path.join(assets_dir, d))]
         kotuny = []
         for kotun_dir in kotun_dirs:
-            kotun = Kotun(kotun_dir=kotun_dir, size_hint=(None, None), size=(100, 100),
+            kotun = Kotun(kotun_dir=kotun_dir,
                           pos=(random.randint(0, Window.width - 100), random.randint(0, Window.height - 100)))  # Losowa pozycja początkowa
             Window.bind(mouse_pos=kotun.on_mouse_pos)  # Śledzenie myszki
             kotuny.append(kotun)
@@ -148,7 +164,6 @@ class KotunApp(App):
             root.add_widget(kotun)  # Dodaj kotuna do głównego widgetu
 
         return root
-
 
 if __name__ == '__main__':
     print("Starting KotunApp...")
