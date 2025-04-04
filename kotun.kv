@@ -2,9 +2,8 @@
 
 <Kotun>:
     Image:
-        source: root.source
-        allow_stretch: True
-        keep_ratio: False
+        fit_mode: 'fill'  # or 'contain', 'cover', etc.
+    # keep_ratio is replaced by fit_mode behavior
         canvas.before:
             Color:
                 rgba: 0, 0, 0, 0  # Przezroczyste tło
