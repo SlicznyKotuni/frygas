@@ -38,6 +38,14 @@ class AnimatedWidget(QLabel):
             self.current_animation = animation_name
             self.frame_index = 0
 
+    def move_randomly(self):
+        """Losowy ruch kotka po ekranie."""
+        self.velocity = QPoint(random.randint(-5, 5), random.randint(-5, 5))
+        if self.velocity.manhattanLength() > 0:
+            self.set_animation("run")
+        else:
+            self.set_animation("idle")
+
     def move_towards(self, target_pos):
         """Przemieszcza widżet w kierunku pozycji myszy."""
         direction = QPoint(target_pos.x() - self.x(), target_pos.y() - self.y())
@@ -45,22 +53,10 @@ class AnimatedWidget(QLabel):
             direction = direction / direction.manhattanLength() * self.speed
         self.move(self.pos() + direction)
 
-    def mousePressEvent(self, event):
-        """Zmienia animację na 'catch' po złapaniu."""
-        if event.button() == Qt.LeftButton:
-            self.set_animation("catch")
-            self.timer.stop()
-
-    def mouseReleaseEvent(self, event):
-        """Przywraca animację 'idle' po puszczeniu."""
-        if event.button() == Qt.LeftButton:
-            self.set_animation("idle")
-            self.timer.start(100)
-
-    def mouseMoveEvent(self, event):
-        """Przemieszcza widżet podczas przeciągania."""
-        if event.buttons() == Qt.LeftButton:
-            self.move(event.globalPos() - self.rect().center())
+    def jump(self):
+        """Skakanie."""
+        self.set_animation("jump")
+        self.timer.singleShot(500, lambda: self.set_animation("idle"))  # Powrót do idle po skoku
 
 
 class MainWindow(QWidget):
@@ -80,11 +76,10 @@ class MainWindow(QWidget):
         self.kotuns = []
         self.load_kotuns()
 
-        # Timer do podążania za myszką
-        self.mouse_pos = QPoint(0, 0)
-        self.follow_timer = QTimer(self)
-        self.follow_timer.timeout.connect(self.update_positions)
-        self.follow_timer.start(16)  # 60 FPS
+        # Timer do aktualizacji ruchów kotków
+        self.update_timer = QTimer(self)
+        self.update_timer.timeout.connect(self.update_kotuns)
+        self.update_timer.start(1000)  # Co 1 sekundę aktualizujemy zachowanie kotków
 
     def load_kotuns(self):
         """Ładuje zasoby animacji i tworzy widgety kotków."""
@@ -114,6 +109,26 @@ class MainWindow(QWidget):
                 else:
                     print(f"Brak klatek w animacji {anim_type} w katalogu {anim_dir}")
         return animations
+
+    def update_kotuns(self):
+        """Aktualizuje zachowanie kotków: losowe ruchy, odpoczynek, skakanie."""
+        for kotun in self.kotuns:
+            action = random.choice(["move", "jump", "idle"])
+            if action == "move":
+                kotun.move_randomly()
+                self.move_kotun(kotun)
+            elif action == "jump":
+                kotun.jump()
+            elif action == "idle":
+                kotun.set_animation("idle")
+
+    def move_kotun(self, kotun):
+        """Przesuwa kotka zgodnie z jego prędkością."""
+        new_pos = kotun.pos() + kotun.velocity
+        # Ograniczamy ruch do obszaru okna
+        new_x = max(0, min(new_pos.x(), self.width() - kotun.width()))
+        new_y = max(0, min(new_pos.y(), self.height() - kotun.height()))
+        kotun.move(new_x, new_y)
 
     def mouseMoveEvent(self, event):
         """Śledzi pozycję myszy."""
