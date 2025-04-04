@@ -1,5 +1,7 @@
 import os
 import random
+import win32gui
+import win32con
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
@@ -13,9 +15,15 @@ Config.set('graphics', 'transparent', '1')
 Config.write()
 
 def set_window_transparent():
-    """Ustawia okno jako przezroczyste (działa tylko na niektórych systemach)."""
-    Window.clearcolor = (0, 0, 0, 0)  # Ustawienie przezroczystości
-    Window.background_color = (0, 0, 0, 0)  # Ustawienie koloru tła na przezroczysty
+    hwnd = win32gui.FindWindow(None, "Frygający Kotuń") # Znajdź okno po tytule
+    if hwnd:
+        # Ustawienie stylu okna na przezroczyste
+        wl = win32con.WS_EX_LAYERED
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, wl)
+        # Ustawienie koloru przezroczystości (tutaj czarny)
+        win32gui.SetLayeredWindowAttributes(hwnd, 0x000000, 255, win32con.LWA_COLORKEY)
+    else:
+        print("Nie znaleziono okna!")
 
 class Kotun(Widget):
     anim_delay = 0.1
@@ -115,6 +123,7 @@ class Kotun(Widget):
 
 class KotunApp(App):
     def build(self):
+        Window.title = "Frygający Kotuń" 
         # Znajdź wszystkie katalogi Frygasiów
         assets_dir = "assets"
         if not os.path.exists(assets_dir):
