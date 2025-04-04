@@ -16,7 +16,7 @@ Config.set('graphics', 'transparent', '1')
 Config.write()
 
 def set_window_transparent():
-    hwnd = win32gui.FindWindow(None, "Frygający Kotuń")  # Znajdź okno po tytule
+    hwnd = win32gui.FindWindow(None, "Frygajacy Kotun")  # Znajdź okno po tytule
     if hwnd:
         # Ustawienie stylu okna na przezroczyste
         wl = win32con.WS_EX_LAYERED
@@ -139,7 +139,7 @@ class Kotun(Widget):
 
 class KotunApp(App):
     def build(self):
-        Window.title = "Frygający Kotuń"
+        Window.title = "Frygajacy Kotun"
         # Znajdź wszystkie katalogi Frygasiów
         assets_dir = "assets"
         if not os.path.exists(assets_dir):
