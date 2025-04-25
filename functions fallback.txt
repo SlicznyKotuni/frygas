@@ -1,0 +1,166 @@
+import os
+import random
+from PyQt5.QtWidgets import QLabel, QApplication
+from PyQt5.QtGui import QPixmap, QCursor, QTransform
+from PyQt5.QtCore import Qt, QTimer
+
+
+class CatWidget(QLabel):
+    def __init__(self, asset_path):
+        super().__init__()
+        self.asset_path = asset_path
+        self.animations = self.load_animations(asset_path)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setScaledContents(True)
+        self.setFixedSize(128, 128)
+
+        self.state = "idle"
+        self.direction = 1  # 1 = right, -1 = left
+        self.dragging = False
+
+        self.current_frame = 0
+        self.frames = []
+        self.load_animation("idle")
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(100)
+
+        # Timer na losowe zachowanie
+        self.behavior_timer = QTimer()
+        self.behavior_timer.timeout.connect(self.random_behavior)
+        self.behavior_timer.start(3000)  # co 3 sekundy zmiana zachowania
+
+        # Timer na polowanie
+        self.hunt_timer = QTimer()
+        self.hunt_timer.timeout.connect(self.start_hunting)
+        self.hunt_timer.start(random.randint(10000, 30000))  # co 10-30 s
+
+        self.move(random.randint(0, 800), random.randint(0, 600))
+
+    def load_animations(self, path):
+        anims = {}
+        for anim in os.listdir(path):
+            anim_dir = os.path.join(path, anim)
+            if os.path.isdir(anim_dir):
+                frames = sorted(os.listdir(anim_dir))
+                anims[anim] = [os.path.join(anim_dir, frame) for frame in frames]
+        return anims
+
+    def load_animation(self, name):
+        if name not in self.animations:
+            return
+        self.state = name
+        self.frames = self.animations.get(name, [])
+        self.current_frame = 0
+        self.update_pixmap()
+
+    def update_frame(self):
+        if not self.frames:
+            return
+
+        self.current_frame = (self.current_frame + 1) % len(self.frames)
+        self.update_pixmap()
+
+        if self.state in ["run", "jump"]:
+            speed = 5 if self.state == "run" else 10
+            self.move_cat(speed)
+        elif self.state == "hunt":
+            self.hunt_cursor()
+
+    def update_pixmap(self):
+        pixmap = QPixmap(self.frames[self.current_frame])
+        if self.direction == -1:
+            transform = QTransform().scale(-1, 1)
+            pixmap = pixmap.transformed(transform, Qt.SmoothTransformation)
+        self.setPixmap(pixmap)
+
+    def move_cat(self, speed):
+        pos = self.pos()
+        x = pos.x() + speed * self.direction
+        y = pos.y()
+
+        screen = QApplication.primaryScreen().availableGeometry()
+        screen_width = screen.width()
+        screen_height = screen.height()
+
+        # Wrap-around na krawędziach
+        if x > screen_width:
+            x = 0
+        elif x < 0:
+            x = screen_width
+
+        if y < 0:
+            y = 0
+        elif y > screen_height - self.height():
+            y = screen_height - self.height()
+
+        self.move(x, y)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.drag_offset = event.pos()
+            self.load_animation("catch")
+
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            self.move(self.mapToGlobal(event.pos() - self.drag_offset))
+
+    def mouseReleaseEvent(self, event):
+        self.dragging = False
+        self.load_animation("idle")
+
+    def start_hunting(self):
+        self.load_animation("hunt")
+
+    def hunt_cursor(self):
+        cursor_pos = QCursor.pos()
+        cat_rect = self.geometry()
+
+        # Sprawdzenie, czy kursor jest nad kotkiem
+        if cat_rect.contains(cursor_pos):
+            self.load_animation("attack")
+            QTimer.singleShot(500, self.win_animation)
+            return
+
+        # Zbliżanie się do kursora
+        cat_pos = self.pos()
+        dx = cursor_pos.x() - cat_pos.x()
+        dy = cursor_pos.y() - cat_pos.y()
+
+        distance = (dx**2 + dy**2)**0.5
+
+        if distance < 80:
+            # Jeśli kotek jest blisko — czai się chwilę
+            self.load_animation("idle")
+            QTimer.singleShot(1000, lambda: self.load_animation("attack"))
+            QTimer.singleShot(1500, self.win_animation)
+        else:
+            self.direction = 1 if dx > 0 else -1
+            step_x = int(dx / max(distance, 1) * 4)
+            step_y = int(dy / max(distance, 1) * 4)
+            self.move(cat_pos.x() + step_x, cat_pos.y() + step_y)
+
+    def win_animation(self):
+        self.load_animation("win")
+        # Powtórz animację win 3 razy z przerwami
+        QTimer.singleShot(500, lambda: self.load_animation("idle"))
+        QTimer.singleShot(1000, lambda: self.load_animation("win"))
+        QTimer.singleShot(1500, lambda: self.load_animation("idle"))
+        QTimer.singleShot(2000, lambda: self.load_animation("win"))
+        QTimer.singleShot(2500, lambda: self.load_animation("idle"))
+
+    def random_behavior(self):
+        if self.dragging or self.state in ["hunt", "attack", "catch", "win"]:
+            return  # nie zmieniaj zachowania w trakcie ważnych akcji
+
+        action = random.choice(["idle", "run", "jump"])
+        self.direction = random.choice([-1, 1])
+        self.load_animation(action)
+
+
+def load_cat_folders(base_path):
+    return [os.path.join(base_path, folder) for folder in os.listdir(base_path)
+            if os.path.isdir(os.path.join(base_path, folder))]
