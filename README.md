@@ -30,9 +30,12 @@ Pozwala Ci tworzyć, kolekcjonować i obserwować jak Twoje własne **frygasie**
 ```bash
 # 1. Klon repo
 git clone https://github.com/SlicznyKotuni/frygas.git
+
 cd frygas
 
 # 2. Instalacja zależności
+pythona trzeba mieć
+
 pip install pygame PyQt5
 ```
 # 3. Odpalanie lokalne
