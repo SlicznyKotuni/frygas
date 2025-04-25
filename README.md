@@ -36,7 +36,9 @@ cd frygas
 pip install pygame PyQt5
 ```
 # 3. Odpalanie lokalne
-``` python .\main.py
+```bash
+ python .\main.py
+
 ```
 Po chwili na ekranie pojawi się Twój pierwszy domyślny Frygaś i… zacznie brykać! 🎉
 
@@ -44,7 +46,8 @@ Po chwili na ekranie pojawi się Twój pierwszy domyślny Frygaś i… zacznie b
 W katalogu /assets wrzuć nowego fryasia
 w pliku stats.py - dopisz mu statystyki lub ciesz się fryganiem automatycznym. 
 Uzupełnij pola:
-```
+
+```bash
 {
    "speed": 5, // im większa liczba, tym bardziej frygany
     "attack_speed": 6,
@@ -52,6 +55,7 @@ Uzupełnij pola:
     "attack_chance": 0.3,
     "sleep_chance": 0.1  # 10% szansy na zaśnięci   
 }
+
 ```
 💡 Zaawansowane fryganie
  "(=✧ω✧=)" 
@@ -66,4 +70,4 @@ MIT – rób, co chcesz, byleby Twoje koty były szczęśliwe. (=^-ω-^=)
 Jeżeli czytasz to zdanie, weź głęboki wdech, przeciągnij się jak kot o poranku
 i pamiętaj: świat jest lepszy, gdy frygasie sobie brykają i frygają!
 
-Have a purr-fect day! 😸
+*Have a purr-fect day! 😸*
