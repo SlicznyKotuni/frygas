@@ -7,7 +7,7 @@
 (______)__m_m) (=^･ω･^=) ~ (=①ω①=) ~ (=✪ᆺ✪=)
 
 
----
+```
 🌟 **Frygaś** to malutka, rozkoszna aplikacja do… **frygania**!  
 Pozwala Ci tworzyć, kolekcjonować i obserwować jak Twoje własne **frygasie** (czyli kocie duszki) beztrosko sobie brykają po ekranie. 🐾✨  
 
