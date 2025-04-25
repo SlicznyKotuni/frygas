@@ -33,16 +33,18 @@ git clone https://github.com/SlicznyKotuni/frygas.git
 cd frygas
 
 # 2. Instalacja zależności
-poprostu main.py
-
+pip install pygame PyQt5
+```
 # 3. Odpalanie lokalne
+``` python .\main.py
+```
 Po chwili na ekranie pojawi się Twój pierwszy domyślny Frygaś i… zacznie brykać! 🎉
 
 🐾 Dodaj własnego Frygasia
 W katalogu /assets wrzuć nowego fryasia
 w pliku stats.py - dopisz mu statystyki lub ciesz się fryganiem automatycznym. 
 Uzupełnij pola:
-
+```
 {
    "speed": 5, // im większa liczba, tym bardziej frygany
     "attack_speed": 6,
@@ -50,7 +52,7 @@ Uzupełnij pola:
     "attack_chance": 0.3,
     "sleep_chance": 0.1  # 10% szansy na zaśnięci   
 }
-
+```
 💡 Zaawansowane fryganie
  "(=✧ω✧=)" 
   ૮(ꂧ▾ꂧ)ა
