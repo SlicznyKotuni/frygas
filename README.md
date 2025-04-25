@@ -18,10 +18,10 @@ Pozwala Ci tworzyć, kolekcjonować i obserwować jak Twoje własne **frygasie**
 | Funkcja | Opis | Emoji-miauknięcie |
 |---------|------|-------------------|
 | **Fryganie w locie** | Twoje frygasie poruszają się po ekranie w zupełnie losowy, kapryśny sposób. | 〜(=^‥^)ノ |
-| **Dodawanie własnych frygasiów** | Wystarczy jeden plik konfiguracyjny i już! | (=^･^=) |
+| **Dodawanie własnych frygasiów** | Wystarczy jeden plik konfiguracyjny i katalog z animacjami i  już! | (=^･^=) |
 | **Nieograniczona liczba kociastych skórek** | Każdy frygaś może mieć swój kolor, wzór i nastrój. | ฅ(•ㅅ•❀)ฅ |
-| **Niskie wymagania** | Uruchamiasz w przeglądarce lub z poziomu terminala. | (ΦωΦ) |
-| **100 % miauczenia, 0 % reklam** | Koty nie potrzebują cookies. | (ฅ`･ω･´)っ |
+| **Niskie wymagania** | Uruchamiasz z poziomu terminala. | (ΦωΦ) |
+| **100 % frygania, 0 % reklam** | Koty nie potrzebują cookies. | (ฅ`･ω･´)っ |
 
 ---
 
